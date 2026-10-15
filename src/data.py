@@ -66,3 +66,20 @@ def encode_labels(y):
 def normalize(image):
     return tf.cast(image, tf.float32) / 255.0
 
+def get_splits():
+    X, y = load_dataset()
+    y_int = encode_labels(y)
+
+    X_train, X_tmp, y_train, y_tmp = train_test_split(
+        X, y_int, test_size=0.30, stratify=y_int, random_state=config.SEED
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_tmp, y_tmp, test_size=0.50, stratify=y_tmp, random_state=config.SEED
+    )
+
+    # entiers -> one-hot : 2 -> [0, 0, 1, 0]
+    n = len(config.CLASSES)
+    return (X_train, to_categorical(y_train, n),
+            X_val, to_categorical(y_val, n),
+            X_test, to_categorical(y_test, n))
+
