@@ -9,10 +9,8 @@ from sklearn.utils.class_weight import compute_class_weight
 
 from src import config
 
-
-# ---------------------------------------------------------------
 # 1) Chargement brut des images avec OpenCV
-# ---------------------------------------------------------------
+
 def load_images(raw_dir=config.RAW_DIR, img_size=config.IMG_SIZE):
 
     images, labels = [], []
@@ -50,7 +48,6 @@ def load_images(raw_dir=config.RAW_DIR, img_size=config.IMG_SIZE):
 
 
 def load_dataset(use_cache=True):
-    """Charge depuis le cache .npz s'il existe, sinon lit les images et crée le cache."""
     if use_cache and config.CACHE_FILE.exists():
         data = np.load(config.CACHE_FILE)
         return data["X"], data["y"]
@@ -60,4 +57,12 @@ def load_dataset(use_cache=True):
     np.savez_compressed(config.CACHE_FILE, X=X, y=y)
     return X, y
 
+# 2) Étiquettes, normalisation, split
+
+def encode_labels(y):
+    encoder = LabelEncoder().fit(config.CLASSES)
+    return encoder.transform(y)
+
+def normalize(image):
+    return tf.cast(image, tf.float32) / 255.0
 
