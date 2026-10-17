@@ -77,9 +77,29 @@ def get_splits():
         X_tmp, y_tmp, test_size=0.50, stratify=y_tmp, random_state=config.SEED
     )
 
-    # entiers -> one-hot : 2 -> [0, 0, 1, 0]
     n = len(config.CLASSES)
     return (X_train, to_categorical(y_train, n),
             X_val, to_categorical(y_val, n),
             X_test, to_categorical(y_test, n))
 
+def get_class_weights(y_train_onehot):
+    y_int = np.argmax(y_train_onehot, axis=1)
+    classes = np.unique(y_int)
+    weights = compute_class_weight("balanced", classes=classes, y=y_int)
+    return {int(c): float(w) for c, w in zip(classes, weights)}
+
+
+# 3) Pipeline tf.data : cache + préchargement
+
+def make_dataset(X, y, training=False):
+    ds = tf.data.Dataset.from_tensor_slices((X, y))
+    ds = ds.cache()
+    if training:
+        ds = ds.shuffle(len(X), seed=config.SEED)
+
+    ds = ds.map(
+        lambda img, lbl: (normalize(img), lbl),
+        num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.batch(config.BATCH_SIZE)
+    ds = ds.prefetch(tf.data.AUTOTUNE)
+    return ds
